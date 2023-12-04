@@ -1,13 +1,12 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const morgan = require('morgan');
-const cors = require('cors');
+const express = require("express");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const morgan = require("morgan");
+const cors = require("cors");
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
-
 
 const userSchema = new mongoose.Schema({
   avatar: String,
@@ -17,14 +16,14 @@ const userSchema = new mongoose.Schema({
   id: String,
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cors());
 
 // POST route to add a new user
-app.post('/api/users', async (req, res) => {
+app.post("/api/users", async (req, res) => {
   try {
     const newUser = new User(req.body);
     await newUser.save();
@@ -35,7 +34,7 @@ app.post('/api/users', async (req, res) => {
 });
 
 // POST route to get all users
-app.get('/api/users', async (req, res) => {
+app.get("/api/users", async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -45,19 +44,45 @@ app.get('/api/users', async (req, res) => {
 });
 
 // SEARCH route to find users by tag or any other attribute
-app.get('/api/users/search', async (req, res) => {
+app.get("/api/users/search", async (req, res) => {
   try {
     const { query } = req.query;
     const users = await User.find({
       $or: [
-        { name: new RegExp(query, 'i') },
-        { headline: new RegExp(query, 'i') },
-        { tags: new RegExp(query, 'i') },
+        { name: new RegExp(query, "i") },
+        { headline: new RegExp(query, "i") },
+        { tags: new RegExp(query, "i") },
       ],
     });
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// endpoint to get mostly used tags and their number
+app.get("/api/mostUsedTags", async (req, res) => {
+  try {
+    const tagsAggregation = await User.aggregate([
+      { $unwind: "$tags" },
+      {
+        $group: {
+          _id: "$tags",
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+    ]);
+
+    const mostUsedTags = tagsAggregation.map(({ _id, count }) => ({
+      tag: _id,
+      count,
+    }));
+
+    res.json(mostUsedTags);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
