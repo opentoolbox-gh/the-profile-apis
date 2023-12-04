@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const morgan = require('morgan');
+const cors = require('cors');
 dotenv.config();
 
 const app = express();
@@ -18,6 +20,8 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 app.use(express.json());
+app.use(morgan("tiny"));
+app.use(cors());
 
 // POST route to add a new user
 app.post('/api/users', async (req, res) => {
