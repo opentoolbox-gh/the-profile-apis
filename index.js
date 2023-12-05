@@ -43,6 +43,20 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
+//Search route to find users with a given tag
+app.get('/api/users/tag/:tag', async (req, res) => {
+  try {
+    const tag = req.params.tag;
+    const users = await User.find({
+      $or: [{ tags: new RegExp(tag, "i") }]
+    });
+
+    res.json(users);
+  } catch (error) {
+    res.status(400).json({error: error.message});
+  }
+})
+
 // SEARCH route to find users by tag or any other attribute
 app.get("/api/users/search", async (req, res) => {
   try {
